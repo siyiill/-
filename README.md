@@ -28,6 +28,11 @@ FOLIUM / Folia 的桌面悬浮窗歌词模组，由 siyii11 与大肥鱼共同�
 - **鼠标穿透**：锁定后点击和拖动落到桌面下面的软件；从 Folia 播放条入口或命令面板解锁。
 - **配置记忆**：位置、字号、颜色、模式、锁定和快捷键状态自动保存。
 - **无外部资源**：全部 HTML / CSS / JS 本地运行，不请求网络，不加载第三方网页。
+- 
+<img width="449" height="234" alt="image" src="https://github.com/user-attachments/assets/427a6ab7-960a-4f31-9333-0084073810bd" />
+<img width="449" height="234" alt="image" src="https://github.com/user-attachments/assets/78c955ff-49ae-4f57-8ea0-3492fce7bfce" />
+<img width="857" height="885" alt="image" src="https://github.com/user-attachments/assets/6ed8ffc1-8bd9-47d4-ac6c-d03221a05b0c" />
+<img width="977" height="846" alt="image" src="https://github.com/user-attachments/assets/4114a986-7042-4739-be7d-face3a742e32" />
 
 ## 安装
 
