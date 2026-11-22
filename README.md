@@ -1,6 +1,6 @@
-# 云音乐风悬浮歌词（cloud-lyric-float）
+# 云风桌面歌词（cloud-lyric-float）
 
-FOLIUM / Folia 的桌面悬浮窗歌词模组，由 siyii11 与大肥鱼共同完成。以云☁️风桌面歌词为视觉方向：透明置顶、当前句逐字点亮、翻译、控制条与鼠标穿透。
+FOLIUM / Folia 的桌面悬浮窗歌词模组，由 siyii11 与大肥鱼共同完成。以云风桌面歌词为视觉方向：透明置顶、当前句逐字点亮、翻译、控制条与鼠标穿透。
 
 ## 制作
 
@@ -32,8 +32,8 @@ FOLIUM / Folia 的桌面悬浮窗歌词模组，由 siyii11 与大肥鱼共同�
 ## 安装
 
 1. 在 Folia 打开 `设置 → 系统 → 模组`，启用模组系统。
-2. 下载发布包 `cloud-lyric-float-1.8.2.zip`，不要解压。
-3. 把 zip 拖进模组面板，启用 `云音乐风悬浮歌词`。
+2. 下载发布包 `cloud-lyric-float-1.8.3.zip`，不要解压。
+3. 把 zip 拖进模组面板，启用 `云风桌面歌词`。
 4. 播放一首歌，桌面底部会出现双行歌词。
 
 这是自行构建的模组，没有 Folium 官方签名。启用时显示“未签名 / 签名不匹配”属于正常现象，请只安装来源可信的 zip。
@@ -112,7 +112,7 @@ MIT
 %APPDATA%\Folia\mods-data\cloud-lyric-float\files\cloud-lyric-float.log
 ```
 
-日志包含时间、系统鼠标坐标、窗口 bounds、冻结尺寸、布局请求/应用、显示器 bounds / workArea / scaleFactor。文件超过 1 MB 时会在下次启动时自动清空。可在命令面板执行「云音乐悬浮歌词：打开拖动诊断日志」直接打开。
+日志包含时间、系统鼠标坐标、窗口 bounds、冻结尺寸、布局请求/应用、显示器 bounds / workArea / scaleFactor。文件超过 1 MB 时会在下次启动时自动清空。可在命令面板执行「云风桌面歌词：打开拖动诊断日志」直接打开。
 
 
 
