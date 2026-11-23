@@ -40,6 +40,7 @@ const DEFAULT_CONFIG = Object.freeze({
   accentColor: '#ff4d4f',
   unsungColor: '#ffffff',
   unsungOpacity: 0.48,
+  upcomingOpacity: 0.48,
   upcomingScale: 0.58,
   showTranslation: true,
   showRomanization: false,
@@ -64,6 +65,7 @@ const normalizeConfig = (raw) => {
   const source = raw && typeof raw === 'object' ? raw : {};
   const fontSize = finite(Number(source.fontSize));
   const unsungOpacity = finite(Number(source.unsungOpacity));
+  const upcomingOpacity = finite(Number(source.upcomingOpacity));
   const upcomingScale = finite(Number(source.upcomingScale));
   return {
     mode: MODE_IDS.includes(source.mode) ? source.mode : DEFAULT_CONFIG.mode,
@@ -72,6 +74,7 @@ const normalizeConfig = (raw) => {
     accentColor: normalizeColor(source.accentColor, DEFAULT_CONFIG.accentColor),
     unsungColor: normalizeColor(source.unsungColor, DEFAULT_CONFIG.unsungColor),
     unsungOpacity: unsungOpacity === null ? DEFAULT_CONFIG.unsungOpacity : clamp(unsungOpacity, 0.1, 1),
+    upcomingOpacity: upcomingOpacity === null ? DEFAULT_CONFIG.upcomingOpacity : clamp(upcomingOpacity, 0.1, 1),
     upcomingScale: upcomingScale === null ? DEFAULT_CONFIG.upcomingScale : clamp(upcomingScale, 0.3, 1),
     showTranslation: source.showTranslation !== false,
     showRomanization: source.showRomanization === true,
@@ -276,6 +279,10 @@ module.exports = function activate(api) {
   let interactiveRegions = { unlock: null, lyrics: [] };
   let pendingCommands = [];
   const hostWindows = new Set();
+
+  // 最小宿主控制状态：不持久化，不改 Folia 尺寸。
+  let hostView = { mode: 'standard', interfaceMode: 'always', border: true, clickThrough: false, alwaysOnTop: false };
+  let hostViewListeners = null;
 
   const isAlive = (browserWindow) => Boolean(browserWindow && !browserWindow.isDestroyed());
 
@@ -693,6 +700,67 @@ module.exports = function activate(api) {
     requestState();
   };
 
+  const findHostWindow = () => {
+    const candidates = [...hostWindows].filter((candidate) => isAlive(candidate));
+    return candidates.find((candidate) => candidate.isVisible())
+      || BrowserWindow.getAllWindows().find((candidate) => candidate !== win && candidate !== settingsWin && isAlive(candidate));
+  };
+
+  const clearHostViewListeners = () => {
+    if (!hostViewListeners) return;
+    const { host, onBlur, onFocus } = hostViewListeners;
+    try {
+      if (isAlive(host)) {
+        host.removeListener('blur', onBlur);
+        host.removeListener('focus', onFocus);
+      }
+    } catch { /* ignore */ }
+    hostViewListeners = null;
+  };
+
+  const applyHostView = (patch) => {
+    const source = patch && typeof patch === 'object' ? patch : {};
+    hostView = {
+      mode: source.mode === 'transparent' ? 'transparent' : source.mode === 'standard' ? 'standard' : hostView.mode,
+      interfaceMode: ['always', 'auto', 'hidden'].includes(source.interfaceMode) ? source.interfaceMode : hostView.interfaceMode,
+      border: typeof source.border === 'boolean' ? source.border : hostView.border,
+      clickThrough: typeof source.clickThrough === 'boolean' ? source.clickThrough : hostView.clickThrough,
+      alwaysOnTop: typeof source.alwaysOnTop === 'boolean' ? source.alwaysOnTop : hostView.alwaysOnTop,
+    };
+    const host = findHostWindow();
+    if (!isAlive(host)) return hostView;
+    clearHostViewListeners();
+    const baseOpacity = hostView.mode === 'transparent' ? 0.88 : 1;
+    const paintOpacity = () => {
+      if (!isAlive(host)) return;
+      const focused = typeof host.isFocused !== 'function' || host.isFocused();
+      try { host.setOpacity(hostView.interfaceMode === 'auto' && !focused ? 0.22 : baseOpacity); } catch { /* ignore */ }
+    };
+    try {
+      host.setHasShadow(hostView.border);
+      host.setAlwaysOnTop(hostView.alwaysOnTop, hostView.alwaysOnTop ? 'screen-saver' : 'normal');
+      host.setIgnoreMouseEvents(hostView.clickThrough, { forward: true });
+      if (hostView.interfaceMode === 'hidden') {
+        host.hide();
+      } else {
+        if (typeof host.isMinimized === 'function' && host.isMinimized()) host.restore();
+        host.show();
+        paintOpacity();
+        if (hostView.interfaceMode === 'auto') {
+          const onBlur = () => paintOpacity();
+          const onFocus = () => paintOpacity();
+          host.on('blur', onBlur);
+          host.on('focus', onFocus);
+          hostViewListeners = { host, onBlur, onFocus };
+        }
+      }
+    } catch (error) {
+      logError('控制 Folia 主窗口失败', error);
+    }
+    dragLog('main:host-action', { state: hostView, window: host.getBounds() });
+    return hostView;
+  };
+
   const focusHostApp = () => {
     const candidates = [...hostWindows].filter((candidate) => isAlive(candidate));
     const target = candidates.find((candidate) => candidate.isVisible())
@@ -703,9 +771,13 @@ module.exports = function activate(api) {
     }
     try {
       if (typeof target.isMinimized === 'function' && target.isMinimized()) target.restore();
+      hostView.clickThrough = false;
+      hostView.interfaceMode = hostView.interfaceMode === 'hidden' ? 'always' : hostView.interfaceMode;
+      target.setIgnoreMouseEvents(false);
+      target.setOpacity(hostView.mode === 'transparent' ? 0.88 : 1);
       target.show();
       target.focus();
-      dragLog('main:focus-app', { ok: true, window: target.getBounds() });
+      dragLog('main:focus-app', { ok: true, clickThrough: false, window: target.getBounds() });
       return true;
     } catch (error) {
       logError('切回 Folia 主窗口失败', error);
@@ -893,6 +965,9 @@ module.exports = function activate(api) {
         break;
       case 'focus-app':
         focusHostApp();
+        break;
+      case 'host-action':
+        applyHostView(payload);
         break;
       case 'open-settings':
         openSettings();
@@ -1406,6 +1481,16 @@ module.exports = function activate(api) {
     try { ipcMain.removeListener(IPC_SETTINGS_COMMAND, onSettingsCommand); } catch { /* ignore */ }
     try { ipcMain.removeListener(IPC_SETTINGS_READY, onSettingsReady); } catch { /* ignore */ }
     try { app.removeListener('browser-window-created', onBrowserWindowCreated); } catch { /* ignore */ }
+    clearHostViewListeners();
+    const hostToRestore = findHostWindow();
+    if (isAlive(hostToRestore)) {
+      try {
+        hostToRestore.setIgnoreMouseEvents(false);
+        hostToRestore.setOpacity(1);
+        hostToRestore.setHasShadow(true);
+        hostToRestore.show();
+      } catch { /* ignore */ }
+    }
     unregisterHotkeys();
     hostWindows.clear();
     dragOrigin = null;

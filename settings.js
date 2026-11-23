@@ -11,6 +11,8 @@ const el = {
   unsungColor: document.getElementById('unsung-color'),
   unsungOpacity: document.getElementById('unsung-opacity'),
   unsungOpacityValue: document.getElementById('unsung-opacity-value'),
+  upcomingOpacity: document.getElementById('upcoming-opacity'),
+  upcomingOpacityValue: document.getElementById('upcoming-opacity-value'),
   upcomingScale: document.getElementById('upcoming-scale'),
   upcomingScaleValue: document.getElementById('upcoming-scale-value'),
   showTranslation: document.getElementById('show-translation'),
@@ -57,6 +59,9 @@ const applyConfig = (next) => {
   const unsungOpacity = Math.round((Number(config.unsungOpacity) || 0.48) * 100);
   el.unsungOpacity.value = String(unsungOpacity);
   el.unsungOpacityValue.textContent = unsungOpacity + '%';
+  const upcomingOpacity = Math.round((Number(config.upcomingOpacity) || 0.48) * 100);
+  el.upcomingOpacity.value = String(upcomingOpacity);
+  el.upcomingOpacityValue.textContent = upcomingOpacity + '%';
   const upcomingScale = Math.round((Number(config.upcomingScale) || 0.58) * 100);
   el.upcomingScale.value = String(upcomingScale);
   el.upcomingScaleValue.textContent = upcomingScale + '%';
@@ -112,6 +117,11 @@ el.unsungOpacity.addEventListener('input', () => {
   const value = Math.round(Number(el.unsungOpacity.value) || 48);
   el.unsungOpacityValue.textContent = value + '%';
   sendConfig({ unsungOpacity: value / 100 });
+});
+el.upcomingOpacity.addEventListener('input', () => {
+  const value = Math.round(Number(el.upcomingOpacity.value) || 48);
+  el.upcomingOpacityValue.textContent = value + '%';
+  sendConfig({ upcomingOpacity: value / 100 });
 });
 el.upcomingScale.addEventListener('input', () => {
   const value = Math.round(Number(el.upcomingScale.value) || 58);

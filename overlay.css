@@ -4,6 +4,7 @@
   --accent-color: #ff4d4f;
   --unsung-color: #ffffff;
   --unsung-opacity: 0.48;
+  --upcoming-opacity: 0.48;
   --upcoming-scale: 0.58;
 }
 
@@ -357,6 +358,43 @@ body.is-playing .play-btn .icon-pause { display: block; }
   background: rgba(255, 255, 255, .13);
 }
 
+/* ------------------------------------------------------------ Folia 控制 */
+.host-menu {
+  position: absolute;
+  z-index: 90;
+  top: 52px;
+  right: 14px;
+  width: min(320px, calc(100% - 28px));
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 12px;
+  background: rgba(20, 21, 25, .96);
+  box-shadow: 0 16px 42px rgba(0, 0, 0, .46);
+  color: #f5f5f7;
+  -webkit-app-region: no-drag;
+}
+
+.host-menu[hidden] { display: none; }
+.host-title { padding: 2px 3px 9px; font-size: 12px; font-weight: 700; }
+.host-row { display: flex; align-items: center; gap: 4px; padding: 4px 0; }
+.host-row > span { flex: 0 0 36px; font-size: 10px; color: rgba(255, 255, 255, .45); }
+.host-row button {
+  all: unset;
+  box-sizing: border-box;
+  flex: 1 1 0;
+  height: 26px;
+  padding: 0 5px;
+  border-radius: 7px;
+  text-align: center;
+  white-space: nowrap;
+  font-size: 10px;
+  color: rgba(255, 255, 255, .66);
+  background: rgba(255, 255, 255, .06);
+  cursor: pointer;
+}
+.host-row button:hover { color: #fff; background: rgba(255, 255, 255, .12); }
+.host-row button.is-active { color: #fff; background: rgba(255, 77, 79, .82); }
+
 /* ---------------------------------------------------------------- 歌词 */
 
 .lyrics-stage {
@@ -412,9 +450,9 @@ body.is-playing .play-btn .icon-pause { display: block; }
   letter-spacing: .025em;
 }
 
-.line.is-adjacent { opacity: var(--unsung-opacity, .48); }
+.line.is-adjacent { opacity: var(--upcoming-opacity, .48); }
 .line.is-adjacent .line-main { color: var(--unsung-color) !important; font-size: calc(var(--font-size) * var(--upcoming-scale, .58)) !important; }
-.line.is-nearby { opacity: calc(var(--unsung-opacity, .48) * .72); }
+.line.is-nearby { opacity: calc(var(--upcoming-opacity, .48) * .72); }
 .line.is-nearby .line-main { color: var(--unsung-color) !important; font-size: calc(var(--font-size) * var(--upcoming-scale, .58) * .86) !important; }
 
 .line-viewport {

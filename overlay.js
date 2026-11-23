@@ -18,6 +18,7 @@ const DEFAULT_CONFIG = {
   accentColor: '#ff4d4f',
   unsungColor: '#ffffff',
   unsungOpacity: 0.48,
+  upcomingOpacity: 0.48,
   upcomingScale: 0.58,
   showTranslation: true,
   showRomanization: false,
@@ -44,6 +45,7 @@ const el = {
   hitboxLabel: document.getElementById('hitbox-label'),
   unlockHint: document.getElementById('unlock-hint'),
   chrome: document.querySelector('.chrome'),
+  hostMenu: document.getElementById('host-menu'),
   fontRange: document.getElementById('font-range'),
   fontValue: document.getElementById('font-value'),
   textColor: document.getElementById('text-color'),
@@ -66,6 +68,8 @@ const state = {
   track: null,
   overflow: 0,
   settingsOpen: false,
+  hostMenuOpen: false,
+  hostView: { mode: 'standard', interfaceMode: 'always', border: true, clickThrough: false, alwaysOnTop: false },
   lastConfigSendAt: 0,
   pendingConfig: null,
   configTimer: null,
@@ -197,6 +201,22 @@ const setSettingsOpen = (open) => {
   scheduleLayout();
 };
 
+const renderHostView = () => {
+  for (const button of document.querySelectorAll('[data-host-kind]')) {
+    button.classList.toggle('is-active', state.hostView[button.dataset.hostKind] === button.dataset.hostValue);
+  }
+  for (const button of document.querySelectorAll('[data-host-toggle]')) {
+    button.classList.toggle('is-active', state.hostView[button.dataset.hostToggle] === true);
+  }
+};
+
+const setHostMenuOpen = (open) => {
+  state.hostMenuOpen = Boolean(open);
+  if (el.hostMenu) el.hostMenu.hidden = !state.hostMenuOpen;
+  renderHostView();
+  scheduleLayout();
+};
+
 const applyConfig = (next) => {
   const source = next && typeof next === 'object' ? next : {};
   const previousFontSize = Number(state.config.fontSize);
@@ -219,6 +239,7 @@ const applyConfig = (next) => {
   document.documentElement.style.setProperty('--accent-color', config.accentColor || '#ff4d4f');
   document.documentElement.style.setProperty('--unsung-color', config.unsungColor || '#ffffff');
   document.documentElement.style.setProperty('--unsung-opacity', String(clamp(Number(config.unsungOpacity) || 0.48, 0.1, 1)));
+  document.documentElement.style.setProperty('--upcoming-opacity', String(clamp(Number(config.upcomingOpacity) || 0.48, 0.1, 1)));
   document.documentElement.style.setProperty('--upcoming-scale', String(clamp(Number(config.upcomingScale) || 0.58, 0.3, 1)));
 
   el.fontRange.value = String(Math.round(Number(config.fontSize) || 46));
@@ -317,7 +338,10 @@ const setLocked = (locked) => {
   document.body.classList.toggle('unlocked', !locked);
   updateHitboxLabel();
   if (!locked) document.body.classList.remove('unlock-hover');
-  if (locked) setSettingsOpen(false);
+  if (locked) {
+    setSettingsOpen(false);
+    setHostMenuOpen(false);
+  }
   for (const button of document.querySelectorAll('[data-action="lock"]')) {
     button.classList.toggle('active-lock', Boolean(locked));
     button.title = locked ? '解除鼠标穿透' : '锁定鼠标穿透';
@@ -519,13 +543,15 @@ function reportLayout() {
   }
 
   const baseWidth = Math.ceil(textWidth + 62);
-  const width = state.settingsOpen
-    ? clamp(baseWidth + 430, 820, 1400)
-    : clamp(baseWidth, 260, 1200);
+  const width = state.hostMenuOpen
+    ? clamp(Math.max(baseWidth, 360), 360, 1200)
+    : state.settingsOpen
+      ? clamp(baseWidth + 430, 820, 1400)
+      : clamp(baseWidth, 260, 1200);
   const linesHeight = el.lines && !el.lines.hidden ? el.lines.getBoundingClientRect().height : 0;
   const contentHeight = linesHeight > 4 ? linesHeight + 84 : 184;
   const height = clamp(
-    Math.ceil(state.settingsOpen ? Math.max(contentHeight, 500) : contentHeight),
+    Math.ceil(state.hostMenuOpen ? Math.max(contentHeight, 250) : state.settingsOpen ? Math.max(contentHeight, 500) : contentHeight),
     150,
     520,
   );
@@ -700,6 +726,7 @@ const actionHandlers = {
     setSettingsOpen(false);
     command('open-settings');
   },
+  'host-menu': () => setHostMenuOpen(!state.hostMenuOpen),
   'close-settings': () => setSettingsOpen(false),
   lock: () => {
     setSettingsOpen(false);
@@ -712,6 +739,10 @@ const actionHandlers = {
   },
   'focus-app': () => {
     setSettingsOpen(false);
+    setHostMenuOpen(false);
+    state.hostView.clickThrough = false;
+    if (state.hostView.interfaceMode === 'hidden') state.hostView.interfaceMode = 'always';
+    renderHostView();
     command('focus-app');
     showToast('已切回 Folia');
   },
@@ -722,6 +753,21 @@ const actionHandlers = {
 };
 
 document.addEventListener('click', (event) => {
+  const hostChoice = event.target.closest('button[data-host-kind]');
+  if (hostChoice) {
+    state.hostView[hostChoice.dataset.hostKind] = hostChoice.dataset.hostValue;
+    renderHostView();
+    command('host-action', { [hostChoice.dataset.hostKind]: hostChoice.dataset.hostValue });
+    return;
+  }
+  const hostToggle = event.target.closest('button[data-host-toggle]');
+  if (hostToggle) {
+    const key = hostToggle.dataset.hostToggle;
+    state.hostView[key] = state.hostView[key] !== true;
+    renderHostView();
+    command('host-action', { [key]: state.hostView[key] });
+    return;
+  }
   const modeButton = event.target.closest('button[data-mode]');
   if (modeButton) {
     const mode = modeButton.dataset.mode;
@@ -784,6 +830,12 @@ el.alwaysOnTop.addEventListener('change', () => {
 
 el.hotkeys.addEventListener('change', () => {
   pushConfig({ hotkeys: el.hotkeys.checked }, true);
+});
+
+document.addEventListener('click', (event) => {
+  if (!state.hostMenuOpen) return;
+  if (event.target.closest('#host-menu') || event.target.closest('[data-action="host-menu"]')) return;
+  setHostMenuOpen(false);
 });
 
 const isInteractiveTarget = (target) => Boolean(
@@ -1047,6 +1099,11 @@ window.addEventListener('contextmenu', (event) => {
 });
 
 window.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && state.hostMenuOpen) {
+    event.preventDefault();
+    setHostMenuOpen(false);
+    return;
+  }
   if (event.key === 'Escape' && state.settingsOpen) {
     event.preventDefault();
     setSettingsOpen(false);
@@ -1078,6 +1135,7 @@ api?.onLockHover?.((payload) => {
 });
 api?.onOpenSettings?.(() => command('open-settings'));
 api?.ready?.();
+renderHostView();
 updateHitboxLabel();
 window.addEventListener('resize', () => {
   updateHitboxBounds();
