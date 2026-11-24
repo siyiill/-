@@ -2,8 +2,8 @@
 
 FOLIUM / Folia 的桌面悬浮窗歌词模组，由 siyii11 与大肥鱼共同完成。当前版本 **2.1.0**，模组 ID 保持 `cloud-lyric-float`。支持透明置顶、逐字点亮、翻译、音译、鼠标穿透、控制 Folia 和独立外观设置。
 
-![云风桌面歌词 2.1.0 功能总览](<img width="1280" height="720" alt="preview" src="https://github.com/user-attachments/assets/ff1e704f-d326-470b-b4ba-162ad69192ed" />
-)
+![云风桌面歌词 2.1.0 功能总览<img width="1600" height="900" alt="intro-2 1 0" src="https://github.com/user-attachments/assets/f22ac15a-f574-41c3-9620-bf717e95024c" />
+
 
 
 ## 制作
